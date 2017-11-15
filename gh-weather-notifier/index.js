@@ -1,56 +1,53 @@
 const request = require("superagent");
 
-const apiKey = "80c08b4dd4325c8ee19a2b2496f32341"; 
-const ghNgrokUrl = "https://e23f56ef.ngrok.io/google-home-notifier'";
-
 module.exports = function (context, req) {
-    context.log('JavaScript HTTP trigger function processed a request.');
+    context.log('Start');
+    
+    let cityname = req.query.cityname;
+    let apiKey = req.query.apiKey;
+    let ghNgrokUrl = req.query.ghNgrokUrl;
 
-    if (req.query.cityname || (req.body && req.body.cityname)) {
-        let cityname = (req.query.cityname || (req.body && req.body.cityname));
-
+    if (cityname && apiKey && ghNgrokUrl) {
         // 天気情報を取得
         request.get("http://api.openweathermap.org/data/2.5/weather?units=metric&q=" + cityname +"&appid="+ apiKey)
         .end((err, res) => {
             if (err) {
                 console.error(err);
             } else {
-                let ghText = formatWeatherData(res);
-                         context.res = {
-                            body: ghText
+                let ghText = formatWeatherData(res.body);
+                context.log(ghText);
+
+                // ローカルのGoogleHomeへテキストを送信
+                request.post(ghNgrokUrl)
+                .type('form')
+                .send({
+                    text: ghText
+                })
+                .end((err, res) => {
+                    if (!err) {
+                        context.res = {
+                            body: "処理が成功しました"
                         };
-                
-                // // ローカルのGoogleHomeへテキストを送信
-                // request.post(ghNgrokUrl)
-                // .type('form')
-                // .send({
-                //     text: ghText
-                // })
-                // .end((err, res) => {
-                //     if (err) {
-                //         context.res = {
-                //             status: 400,
-                //             body: "処理が失敗しました"
-                //         };
-                //     } else {
-                //         context.res = {
-                //             body: "処理が成功しました"
-                //         };
-                //     }
-                // })
+                    } else {
+                        context.res = {
+                            status: 400,
+                            body: "処理が失敗しました"
+                        };
+                    }
+                })
             }
         })
-
-
     }
     else {
         context.res = {
             status: 400,
-            body: "Please pass a name on the query string or in the request body"
+            body: "パラメーターエラー"
         };
     }
-    
+
     context.done();
+
+    context.log('End');
 };
 
 function formatWeatherData(weatherObj){
@@ -89,6 +86,8 @@ function convertJapaneseWeather(engWeatherId){
         result += "晴れ";
     }else if(801 <= engWeatherId && engWeatherId <= 804){
         result += "曇り";
+    }else{
+        result += "とんでもない天気";
     }
     return result;
 }
