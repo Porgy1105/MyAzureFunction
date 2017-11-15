@@ -14,7 +14,7 @@ module.exports = function (context, req) {
             if (err) {
                 console.error(err);
             } else {
-                let ghText = formatWeatherData(res.body);
+                let ghText = formatWeatherData(res.body) + randomText();
                 context.log(ghText);
 
                 // ローカルのGoogleHomeへテキストを送信
@@ -89,5 +89,33 @@ function convertJapaneseWeather(engWeatherId){
     }else{
         result += "とんでもない天気";
     }
+    return result;
+}
+
+function randomText(){
+    let result ="";
+
+    var random = Math.floor( Math.random() * 4 ) ;
+
+    switch (random){
+        case 0:
+            result = "今日もきっといい日になるでしょう";
+            break;
+        case 1:
+            result = "今日も1日頑張ってください";
+            break;
+        case 2:
+            result = "今日もはりきって行きましょう";
+            break;
+        case 3:
+            result = "全力を尽くしていきましょう";
+            break;
+        case 4:
+            result = "今日も楽しくいきましょう";
+            break;
+        default:
+            break;
+    }
+
     return result;
 }
